@@ -5,6 +5,14 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Some constants for convenience
+const (
+	InteractionTypeApplicationCommand  = discordgo.InteractionApplicationCommand
+	InteractionTypeMessageComponent    = discordgo.InteractionMessageComponent
+	InteractionTypeCommandAutocomplete = discordgo.InteractionApplicationCommandAutocomplete
+	InteractionTypeModalSubmit         = discordgo.InteractionModalSubmit
+)
+
 // Feature essentially represents a command or a message component that
 // you want to receive and respond to.
 type Feature struct {
@@ -36,15 +44,13 @@ func NewSCM() *SCM {
 }
 
 // AddFeature adds a Feature to the SCM.
-func (s *SCM) AddFeature(f *Feature) {
-	s.Features = append(s.Features, f)
+func (scm *SCM) AddFeature(feature *Feature) {
+	scm.Features = append(scm.Features, feature)
 }
 
 // AddFeatures adds multiple Features to the SCM.
-func (s *SCM) AddFeatures(ff []*Feature) {
-	for _, f := range ff {
-		s.AddFeature(f)
-	}
+func (scm *SCM) AddFeatures(features []*Feature) {
+	scm.Features = append(scm.Features, features...)
 }
 
 // CreateCommands registers any commands (Features with Type
@@ -52,44 +58,44 @@ func (s *SCM) AddFeatures(ff []*Feature) {
 // discordgo.InteractionApplicationCommandAutocomplete) with the API.
 // Leave guildID as empty string for global commands.
 // NOTE: Bot must already be started beforehand.
-func (s *SCM) CreateCommands(c *discordgo.Session, guildID string) error {
-	appID := c.State.User.ID
-
-	if _, ok := s.botCommandIDs[appID]; ok {
+func (scm *SCM) CreateCommands(s *discordgo.Session, guildID string) error {
+	appID := s.State.User.ID
+	// check if commands have already been registered
+	if _, ok := scm.botCommandIDs[appID]; ok {
 		return errors.New("this application already has registered commands once")
 	}
 
 	var applicationCommands []*discordgo.ApplicationCommand
 
-	for _, f := range s.Features {
+	for _, f := range scm.Features {
 		if f.Type == discordgo.InteractionApplicationCommand || f.Type == discordgo.InteractionApplicationCommandAutocomplete {
 			applicationCommands = append(applicationCommands, f.ApplicationCommand)
 		}
 	}
 
-	createdCommands, err := c.ApplicationCommandBulkOverwrite(appID, guildID, applicationCommands)
+	createdCommands, err := s.ApplicationCommandBulkOverwrite(appID, guildID, applicationCommands)
 
 	if err != nil {
 		return err
 	}
 
-	createdCommandIDs := []string{}
+	var createdCommandIDs []string
 
 	for _, cc := range createdCommands {
 		createdCommandIDs = append(createdCommandIDs, cc.ID)
 	}
 
-	s.botCommandIDs[appID] = createdCommandIDs
+	scm.botCommandIDs[appID] = createdCommandIDs
 
 	return nil
 }
 
 // DeleteCommands deletes any commands registered using CreateCommands with the API.
-func (s *SCM) DeleteCommands(c *discordgo.Session, guildID string) error {
-	appID := c.State.User.ID
+func (scm *SCM) DeleteCommands(s *discordgo.Session, guildID string) error {
+	appID := s.State.User.ID
 
-	for _, ccID := range s.botCommandIDs[appID] {
-		if err := c.ApplicationCommandDelete(appID, guildID, ccID); err != nil {
+	for _, ccID := range scm.botCommandIDs[appID] {
+		if err := s.ApplicationCommandDelete(appID, guildID, ccID); err != nil {
 			return err
 		}
 	}
@@ -99,22 +105,20 @@ func (s *SCM) DeleteCommands(c *discordgo.Session, guildID string) error {
 
 // HandleInteractionCreate receives incoming interactions and runs the
 // respective Feature's Handler.
-func (s *SCM) HandleInteractionCreate(c *discordgo.Session, i *discordgo.InteractionCreate) {
+func (scm *SCM) HandleInteractionCreate(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Find relevant Feature
 	var relevantFeature *Feature
 
-	for _, f := range s.Features {
+	for _, f := range scm.Features {
 		if f.Type == i.Type {
 			if i.Type == discordgo.InteractionMessageComponent {
-				// If this is a MessageComponent interaction, check that the CustomID matches
-
+				// check if the CustomID matches
 				if f.CustomID == i.MessageComponentData().CustomID {
 					relevantFeature = f
 					break
 				}
 			} else {
-				// If it's a command interaction such as an ApplicationCommand or ApplicationCommandAutocomplete, check name.
-
+				// check the name of the command
 				if f.ApplicationCommand.Name == i.ApplicationCommandData().Name {
 					relevantFeature = f
 					break
@@ -125,6 +129,6 @@ func (s *SCM) HandleInteractionCreate(c *discordgo.Session, i *discordgo.Interac
 
 	// Handle if we have identified a relevant Feature
 	if relevantFeature != nil {
-		relevantFeature.Handler(c, i)
+		relevantFeature.Handler(s, i)
 	}
 }
