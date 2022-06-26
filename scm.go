@@ -5,6 +5,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Feature essentially represents a command or a message component that
+// you want to receive and respond to.
 type Feature struct {
 	Type    discordgo.InteractionType
 	Handler func(*discordgo.Session, *discordgo.InteractionCreate)
@@ -17,11 +19,15 @@ type Feature struct {
 	CustomID string
 }
 
+// SCM represents the interaction manager, which handles
+// responding to interactions as well as registering slash
+// commands with the Discord API.
 type SCM struct {
 	Features      []*Feature
 	botCommandIDs map[string][]string
 }
 
+// NewSCM creates a new SCM instance.
 func NewSCM() *SCM {
 	return &SCM{
 		Features:      []*Feature{},
@@ -34,13 +40,16 @@ func (s *SCM) AddFeature(f *Feature) {
 	s.Features = append(s.Features, f)
 }
 
+// AddFeatures adds multiple Features to the SCM.
 func (s *SCM) AddFeatures(ff []*Feature) {
 	for _, f := range ff {
 		s.AddFeature(f)
 	}
 }
 
-// CreateCommands registers any commands (Features with Type discordgo.InteractionApplicationCommand or discordgo.InteractionApplicationCommandAutocomplete) with the API.
+// CreateCommands registers any commands (Features with Type
+// discordgo.InteractionApplicationCommand or
+// discordgo.InteractionApplicationCommandAutocomplete) with the API.
 // Leave guildID as empty string for global commands.
 // NOTE: Bot must already be started beforehand.
 func (s *SCM) CreateCommands(c *discordgo.Session, guildID string) error {
@@ -75,7 +84,7 @@ func (s *SCM) CreateCommands(c *discordgo.Session, guildID string) error {
 	return nil
 }
 
-// DeleteCommands deregisters any commands registered using CreateCommands with the API.
+// DeleteCommands deletes any commands registered using CreateCommands with the API.
 func (s *SCM) DeleteCommands(c *discordgo.Session, guildID string) error {
 	appID := c.State.User.ID
 
@@ -88,6 +97,8 @@ func (s *SCM) DeleteCommands(c *discordgo.Session, guildID string) error {
 	return nil
 }
 
+// HandleInteractionCreate receives incoming interactions and runs the
+// respective Feature's Handler.
 func (s *SCM) HandleInteractionCreate(c *discordgo.Session, i *discordgo.InteractionCreate) {
 	// Find relevant Feature
 	var relevantFeature *Feature

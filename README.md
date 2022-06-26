@@ -1,19 +1,17 @@
 # discordgo-scm
 
-> Slash commands manager for discordgo
-
-[![Go Reference](https://pkg.go.dev/badge/github.com/ethanent/discordgo-scm.svg)](https://pkg.go.dev/github.com/ethanent/discordgo-scm)
+> Interactions manager for [discordgo](https://pkg.go.dev/github.com/bwmarrin/discordgo), forked from [ethanent/discordgo-scm](https://github.com/ethanent/discordgo-scm).
 
 ## Install
 
 ```sh
-go get github.com/ethanent/discordgo-scm
+go get github.com/deathvenom54/discordgo-scm
 ```
 
 ## Usage
 
 SCM is based around the concept of a [Feature](https://pkg.go.dev/github.com/ethanent/discordgo-scm#Feature). It's meant
-to be a somewhat futureproof way to handle all kinds of Discord interactions.
+to be a somewhat future-proof way to handle all kinds of Discord interactions.
 
 You may create Features for a number of different interaction types, including ApplicationCommand,
 ApplicationCommandAutocomplete, and MessageComponent.
