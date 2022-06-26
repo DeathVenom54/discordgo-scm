@@ -3,6 +3,7 @@ package discordgo_scm
 import (
 	"errors"
 	"github.com/bwmarrin/discordgo"
+	"regexp"
 )
 
 // Some constants for convenience
@@ -24,6 +25,7 @@ type Feature struct {
 	ApplicationCommand *discordgo.ApplicationCommand
 
 	// CustomID if Type is discordgo.InteractionMessageComponent
+	// can also be a regular expression
 	CustomID string
 }
 
@@ -120,6 +122,18 @@ func (scm *SCM) HandleInteractionCreate(s *discordgo.Session, i *discordgo.Inter
 			} else {
 				// check the name of the command
 				if f.ApplicationCommand.Name == i.ApplicationCommandData().Name {
+					relevantFeature = f
+					break
+				}
+			}
+		}
+	}
+
+	// Find feature by regex CustomID
+	if relevantFeature == nil {
+		for _, f := range scm.Features {
+			if i.Type == discordgo.InteractionMessageComponent {
+				if m, _ := regexp.Match(f.CustomID, []byte(i.MessageComponentData().CustomID)); m {
 					relevantFeature = f
 					break
 				}
