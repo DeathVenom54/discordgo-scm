@@ -113,6 +113,13 @@ func (scm *SCM) HandleInteractionCreate(s *discordgo.Session, i *discordgo.Inter
 
 	for _, f := range scm.Features {
 		if f.Type == i.Type {
+			// check if the CustomID matches
+			if i.Type == discordgo.InteractionModalSubmit {
+				if f.CustomID == i.ModalSubmitData().CustomID {
+					relevantFeature = f
+					break
+				}
+			}
 			if i.Type == discordgo.InteractionMessageComponent {
 				// check if the CustomID matches
 				if f.CustomID == i.MessageComponentData().CustomID {
@@ -134,6 +141,11 @@ func (scm *SCM) HandleInteractionCreate(s *discordgo.Session, i *discordgo.Inter
 		for _, f := range scm.Features {
 			if i.Type == discordgo.InteractionMessageComponent {
 				if m, _ := regexp.Match(f.CustomID, []byte(i.MessageComponentData().CustomID)); m {
+					relevantFeature = f
+					break
+				}
+			} else if i.Type == discordgo.InteractionModalSubmit {
+				if m, _ := regexp.Match(f.CustomID, []byte(i.ModalSubmitData().CustomID)); m {
 					relevantFeature = f
 					break
 				}
