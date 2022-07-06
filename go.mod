@@ -1,4 +1,4 @@
-module github.com/deathvenom54/discordgo-scm
+module github.com/deathvenom54/discordgo-scm/v2
 
 go 1.17
 
